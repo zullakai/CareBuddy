@@ -61,7 +61,7 @@ with open('model/point_history_classifier/point_history_classifier_label.csv', e
     point_history_classifier_labels = [row[0] for row in csv.reader(f)]
 
 # ✅ Open Camera
-cap = cv.VideoCapture(0)
+cap = cv.VideoCapture(1) # use 1 for external camera, use 0 for built in camera
 cap.set(cv.CAP_PROP_FRAME_WIDTH, 960)
 cap.set(cv.CAP_PROP_FRAME_HEIGHT, 540)
 
