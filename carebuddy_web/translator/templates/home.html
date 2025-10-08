@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CareBuddy Test</title>
+    <script>
+        async function callApi() {
+            let response = await fetch("/api/test/");
+            let data = await response.json();
+            document.getElementById("result").innerText = data.message;
+        }
+    </script>
+</head>
+<body>
+    <h1>CareBuddy Web</h1>
+    <button onclick="callApi()">Call API</button>
+    <p id="result"></p>
+</body>
+</html>
