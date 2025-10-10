@@ -52,6 +52,41 @@ def main():
 
     use_brect = True
 
+    # -------------------------
+    # 🔹 STARTUP: ask mode & ID
+    # -------------------------
+    # Default values
+    mode = 0
+    number = None
+
+    print("========== CareBuddy Recorder ==========")
+    print("Choose initial mode (press Enter to use default 'n'):")
+    print("  k -> Logging Key Points")
+    print("  h -> Logging Point History")
+    print("  n -> No logging (default)")
+    mode_input = input("Enter mode (k/h/n): ").strip().lower()
+    if mode_input == "k":
+        mode = 1
+    elif mode_input == "h":
+        mode = 2
+    else:
+        mode = 0
+
+    try:
+        number_input = input("Enter label ID to record (any integer, e.g., 0, 12, 25): ").strip()
+        if number_input == "":
+            number = None
+        else:
+            number = int(number_input)
+    except ValueError:
+        print("Invalid input. Defaulting to None (no number).")
+        number = None
+
+    print(f"✅ Initial mode set to: {['n','k','h'][mode] if mode in [0,1,2] else mode}")
+    print(f"✅ Label ID: {number}")
+    print("Note: you can still change mode during runtime with keys: 'k' (keypoint), 'h' (point history), 'n' (stop).")
+    print("Press ESC to quit.")
+
     # Camera preparation ###############################################################
     cap = cv.VideoCapture(cap_device)
     cap.set(cv.CAP_PROP_FRAME_WIDTH, cap_width)
@@ -96,7 +131,7 @@ def main():
     finger_gesture_history = deque(maxlen=history_length)
 
     #  ########################################################################
-    mode = 0
+    # mode and number already possibly set from startup prompt
 
     while True:
         fps = cvFpsCalc.get()
@@ -105,7 +140,8 @@ def main():
         key = cv.waitKey(10)
         if key == 27:  # ESC
             break
-        number, mode = select_mode(key, mode)
+        # select_mode no longer changes number from digit keys; keeps mode switching
+        _, mode = select_mode(key, mode)
 
         # Camera capture #####################################################
         ret, image = cap.read()
@@ -182,9 +218,11 @@ def main():
 
 
 def select_mode(key, mode):
-    number = -1
-    if 48 <= key <= 57:  # 0 ~ 9
-        number = key - 48
+    """
+    Only changes mode using 'n', 'k', 'h' keys.
+    It no longer reads numeric keys to change the label ID.
+    """
+    number = -1  # unused here, kept for compatibility with original return
     if key == 110:  # n
         mode = 0
     if key == 107:  # k
@@ -279,14 +317,20 @@ def pre_process_point_history(image, point_history):
 
 
 def logging_csv(number, mode, landmark_list, point_history_list):
+    """
+    Write to CSV depending on mode. No longer restricted to 0..9 for label 'number'.
+    If number is None, nothing will be written.
+    """
+    if number is None:
+        return
     if mode == 0:
         pass
-    if mode == 1 and (0 <= number <= 9):
+    if mode == 1:
         csv_path = 'model/keypoint_classifier/keypoint.csv'
         with open(csv_path, 'a', newline="") as f:
             writer = csv.writer(f)
             writer.writerow([number, *landmark_list])
-    if mode == 2 and (0 <= number <= 9):
+    if mode == 2:
         csv_path = 'model/point_history_classifier/point_history.csv'
         with open(csv_path, 'a', newline="") as f:
             writer = csv.writer(f)
@@ -532,7 +576,8 @@ def draw_info(image, fps, mode, number):
         cv.putText(image, "MODE:" + mode_string[mode - 1], (10, 90),
                    cv.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1,
                    cv.LINE_AA)
-        if 0 <= number <= 9:
+        # Show the number for any integer label
+        if number is not None:
             cv.putText(image, "NUM:" + str(number), (10, 110),
                        cv.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1,
                        cv.LINE_AA)
